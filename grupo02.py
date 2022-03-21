@@ -1,26 +1,43 @@
-import re
+try:
+    import ply.lex as lex
+    import ply.yacc as yacc        
+except ImportError:
+    raise ImportError('Please, add ply library to the root of the proyect or run pip install -r requirements.txt')
 
-# Initialization
-stack = []
-parenthesis_stack = []
+def t_NUMBER(t):
+    r'\d+'
+    t.value = int(t.value)
+    return t
 
-def calculator(s):
-    newString = s.replace(" ", "")
-    tokens_list = list(newString)
-    position = ''
-    # Recorrer la lista para encontrar los **
-    for idx, val in enumerate(tokens_list):
-        if val == '*' and tokens_list[idx+1] == '*':
-            print('potencia')
-            ##reemplazar esa potencia por un solo carater que tenga **
-            tokens_list.remove(val)
-            tokens_list[idx] = '**'
-    
-    for token in tokens_list:
-        if token == '(':
-            parenthesis_stack.append(")")
-        if token == ')':
-            parenthesis_stack.remove(token)
+def t_newline(t):
+    r'\n+'
+    t.lexer.lineno += len(t.value)
 
-    print(parenthesis_stack)
-    return tokens_list
+# Ignore whitespace
+t_ignore = ' \t'
+
+# Error handler
+def t_error(t):
+    print("Lex error. Character '%s' is not valid" % t.value[0])
+    t.lexer.skip(1)
+
+lexer = lex.lex()
+
+def p_OPERATION_AXIOM(p):
+    '''OPERATION : OPERATION_NT OPERANDO_NT OPERATION_NT'''
+
+def p_OPERATION(p):
+    '''OPERATION_NT : LEFT_PARENTHESIS INTERNAL_OP RIGHT_PARENTHESIS
+                    | INTERNAL_OP'''
+
+def p_INTERNALOP(p):
+     '''INTERNAL_OP : NUMBER OPERANDO NUMBER
+                    | NUMBER OPERANDO OPERATION_NT
+                    | OPERATION_NT OPERANDO NUMBER
+                    | NUMBER'''
+
+def p_error(p):
+    if p:
+        print("Syntax error at '%s'" % p.value)
+    else:
+        print("Syntax error at EOF")
