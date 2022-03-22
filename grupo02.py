@@ -1,43 +1,30 @@
-try:
-    import ply.lex as lex
-    import ply.yacc as yacc        
-except ImportError:
-    raise ImportError('Please, add ply library to the root of the proyect or run pip install -r requirements.txt')
+def calculator(s):
+    newString = s.replace(" ", "")
+    tokens_list = list(newString)
+    val = ''
+    idx = 0
+    terminos = []
+    posTerminos = []
+    prioridades = []
 
-def t_NUMBER(t):
-    r'\d+'
-    t.value = int(t.value)
-    return t
+    # Recorrer la lista para encontrar las potencias que son un caso especial **
+    for idx, val in enumerate(tokens_list):
+        if val == '*' and tokens_list[idx+1] == '*':
+            ## reemplazar esa potencia por un solo carater que tenga ** **
+            tokens_list.remove(val)
+            tokens_list[idx] = '**'
+    
+    for idx, val in enumerate(tokens_list):
+        if val == '(':
+            prioridades.append(idx)
+            posTerminos.append(idx)
+        if val == ')':
+            posUlt = posTerminos.pop()
+            aux={}
+            aux['tokens']= tokens_list[posUlt : idx + 1]
+            terminos.append(aux)
 
-def t_newline(t):
-    r'\n+'
-    t.lexer.lineno += len(t.value)
-
-# Ignore whitespace
-t_ignore = ' \t'
-
-# Error handler
-def t_error(t):
-    print("Lex error. Character '%s' is not valid" % t.value[0])
-    t.lexer.skip(1)
-
-lexer = lex.lex()
-
-def p_OPERATION_AXIOM(p):
-    '''OPERATION : OPERATION_NT OPERANDO_NT OPERATION_NT'''
-
-def p_OPERATION(p):
-    '''OPERATION_NT : LEFT_PARENTHESIS INTERNAL_OP RIGHT_PARENTHESIS
-                    | INTERNAL_OP'''
-
-def p_INTERNALOP(p):
-     '''INTERNAL_OP : NUMBER OPERANDO NUMBER
-                    | NUMBER OPERANDO OPERATION_NT
-                    | OPERATION_NT OPERANDO NUMBER
-                    | NUMBER'''
-
-def p_error(p):
-    if p:
-        print("Syntax error at '%s'" % p.value)
-    else:
-        print("Syntax error at EOF")
+    for idx, val in enumerate(terminos):
+        cadena = ''.join(val['tokens'])
+        terminos[idx]['result'] = eval(cadena)
+    return (terminos[-1]['result'], ''.join(terminos[0]['tokens']).replace("(", "").replace(")", ""))
